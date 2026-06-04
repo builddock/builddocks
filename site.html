@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Builddocks — Engineering High-Performance Systems</title>
+  <meta name="description" content="Builddocks architects scalable web applications, AI automation, and trading infrastructure for demanding enterprise environments." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            slate: {
+              950: '#020617',
+              900: '#0f172a',
+              850: '#0b1221',
+              800: '#1e293b',
+              700: '#334155',
+              600: '#475569',
+              500: '#64748b',
+              400: '#94a3b8',
+              300: '#cbd5e1',
+              200: '#e2e8f0',
+              100: '#f1f5f9',
+              50: '#f8fafc',
+            },
+            cyan: {
+              450: '#22d3ee',
+              400: '#38bdf8',
+              350: '#67e8f9',
+              300: '#a5f3fc',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          spacing: {
+            '18': '4.5rem',
+            '22': '5.5rem',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+
+    /* Noise texture overlay */
+    .noise-overlay {
+      position: fixed; inset: 0; z-index: 9999; pointer-events: none; opacity: 0.03;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    }
+
+    /* Subtle grid */
+    .bg-grid {
+      background-size: 32px 32px;
+      background-image: linear-gradient(to right, rgba(148,163,184,0.04) 1px, transparent 1px),
+                        linear-gradient(to bottom, rgba(148,163,184,0.04) 1px, transparent 1px);
+    }
+
+    /* Glow effects */
+    .glow-cyan {
+      box-shadow: 0 0 60px -15px rgba(34, 211, 238, 0.15), 0 0 120px -30px rgba(34, 211, 238, 0.08);
+    }
+    .glow-cyan-sm {
+      box-shadow: 0 0 30px -8px rgba(34, 211, 238, 0.2);
+    }
+
+    /* Glass morphism */
+    .glass {
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(16px) saturate(1.2);
+      border: 1px solid rgba(148, 163, 184, 0.08);
+    }
+    .glass-strong {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(24px) saturate(1.4);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+    }
+
+    /* Text gradient */
+    .text-gradient {
+      background: linear-gradient(135deg, #22d3ee 0%, #818cf8 50%, #c084fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Animated underline */
+    .hover-underline {
+      position: relative;
+    }
+    .hover-underline::after {
+      content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 1.5px;
+      background: linear-gradient(90deg, #22d3ee, #818cf8);
+      transition: width 0.3s ease;
+    }
+    .hover-underline:hover::after { width: 100%; }
+
+    /* Reveal animations */
+    .reveal {
+      opacity: 0; transform: translateY(30px);
+      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .reveal.active {
+      opacity: 1; transform: translateY(0);
+    }
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+    /* Button shine effect */
+    .btn-shine {
+      position: relative; overflow: hidden;
+    }
+    .btn-shine::before {
+      content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+      transition: left 0.5s ease;
+    }
+    .btn-shine:hover::before { left: 100%; }
+
+    /* Stats counter animation */
+    @keyframes countUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Pulse dot */
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+    .animate-pulse-dot { animation: pulse-dot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+    /* Floating animation */
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+    .animate-float { animation: float 6s ease-in-out infinite; }
+
+    /* Mobile menu */
+    .mobile-menu {
+      transform: translateX(-100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .mobile-menu.open { transform: translateX(0); }
+
+    /* Image hover zoom */
+    .img-zoom { overflow: hidden; }
+    .img-zoom img { transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); }
+    .img-zoom:hover img { transform: scale(1.05); }
+
+    /* Card lift */
+    .card-lift {
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+    }
+    .card-lift:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.35);
+    }
+
+    /* Terminal cursor blink */
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+    .cursor-blink { animation: blink 1s step-end infinite; }
+
+    /* Smooth section transitions */
+    section { position: relative; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-300 antialiased selection:bg-cyan-500/30 selection:text-cyan-300">
+
+  <!-- Noise overlay for realism -->
+  <div class="noise-overlay"></div>
+
+  <!-- Navigation -->
+  <header id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-500">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+      <div class="flex items-center justify-between h-20">
+        <!-- Logo -->
+        <a href="#" class="flex items-center gap-3 group">
+          <img alt="Builddocks" class="h-10 w-auto object-contain" src="assets/logo.png"/>
+        </a>
+
+        <!-- Desktop Nav -->
+        <nav class="hidden md:flex items-center gap-8">
+          <a href="#services" class="text-sm font-medium text-slate-400 hover:text-slate-100 hover-underline transition-colors">Services</a>
+          <a href="#work" class="text-sm font-medium text-slate-400 hover:text-slate-100 hover-underline transition-colors">Case Studies</a>
+          <a href="#process" class="text-sm font-medium text-slate-400 hover:text-slate-100 hover-underline transition-colors">Process</a>
+          <a href="#about" class="text-sm font-medium text-slate-400 hover:text-slate-100 hover-underline transition-colors">About</a>
+        </nav>
+
+        <!-- CTA -->
+        <div class="hidden md:flex items-center gap-4">
+          <a href="#contact" class="btn-shine px-5 py-2.5 rounded-full bg-gradient-to-r from-cyan-500 to-cyan-600 text-sm font-semibold text-slate-950 hover:from-cyan-400 hover:to-cyan-500 transition-all active:scale-95">
+            Start a Project
+          </a>
+        </div>
+
+        <!-- Mobile menu button -->
+        <button id="menuBtn" class="md:hidden p-2 text-slate-400 hover:text-slate-100 transition-colors" aria-label="Menu">
+          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Mobile Menu -->
+  <div id="mobileMenu" class="mobile-menu fixed inset-0 z-[60] bg-slate-950/98 backdrop-blur-xl md:hidden">
+    <div class="flex flex-col h-full p-6">
+      <div class="flex justify-between items-center mb-12">
+        <span class="text-xl font-bold text-slate-100">Builddocks</span>
+        <button id="closeMenuBtn" class="p-2 text-slate-400 hover:text-slate-100">
+          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <nav class="flex flex-col gap-6">
+        <a href="#services" class="mobile-link text-2xl font-semibold text-slate-300 hover:text-cyan-400 transition-colors">Services</a>
+        <a href="#work" class="mobile-link text-2xl font-semibold text-slate-300 hover:text-cyan-400 transition-colors">Case Studies</a>
+        <a href="#process" class="mobile-link text-2xl font-semibold text-slate-300 hover:text-cyan-400 transition-colors">Process</a>
+        <a href="#about" class="mobile-link text-2xl font-semibold text-slate-300 hover:text-cyan-400 transition-colors">About</a>
+        <a href="#contact" class="mobile-link mt-4 text-center px-6 py-4 rounded-full bg-cyan-500 text-slate-950 font-semibold">Start a Project</a>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Hero Section -->
+  <section class="relative min-h-screen flex items-center justify-center overflow-hidden bg-grid">
+    <!-- Background gradients -->
+    <div class="absolute inset-0 bg-gradient-to-b from-slate-950 via-transparent to-slate-950 opacity-80"></div>
+    <div class="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[700px] bg-cyan-500/5 rounded-full blur-[100px]"></div>
+    <div class="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-indigo-500/5 rounded-full blur-[80px]"></div>
+
+    <div class="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 pt-32 pb-20">
+      <div class="max-w-4xl">
+        <!-- Status badge -->
+        <div class="reveal inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-slate-800/60 border border-slate-700/50 mb-8">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse-dot"></span>
+          <span class="text-xs font-mono text-slate-400 uppercase tracking-widest">Accepting new projects for Q3 2025</span>
+        </div>
+
+        <!-- Main headline -->
+        <h1 class="reveal reveal-delay-1 text-5xl sm:text-6xl lg:text-7xl font-extrabold text-slate-100 leading-[1.1] tracking-tight mb-8">
+          We build systems that
+          <span class="text-gradient">outperform expectations</span>
+        </h1>
+
+        <!-- Subtitle -->
+        <p class="reveal reveal-delay-2 text-lg sm:text-xl text-slate-400 leading-relaxed max-w-2xl mb-12">
+          Architecture, engineering, and deployment of high-performance web applications, 
+          AI automation pipelines, and low-latency trading infrastructure for enterprises that can't afford downtime.
+        </p>
+
+        <!-- CTA Buttons -->
+        <div class="reveal reveal-delay-3 flex flex-col sm:flex-row gap-4 mb-16">
+          <a href="#contact" class="btn-shine inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-gradient-to-r from-cyan-500 to-cyan-600 text-slate-950 font-semibold hover:from-cyan-400 hover:to-cyan-500 transition-all active:scale-95 shadow-lg shadow-cyan-500/20">
+            <span>Schedule a consultation</span>
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+            </svg>
+          </a>
+          <a href="#work" class="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full border border-slate-700 text-slate-300 font-semibold hover:bg-slate-800/50 hover:border-slate-600 transition-all active:scale-95">
+            <span>View our work</span>
+          </a>
+        </div>
+
+        <!-- Stats -->
+        <div class="reveal reveal-delay-4 grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-10 pt-10 border-t border-slate-800/60">
+          <div>
+            <div class="text-3xl sm:text-4xl font-bold text-slate-100 mb-1">$2.4B</div>
+            <div class="text-xs sm:text-sm text-slate-500">Assets managed via our trading systems</div>
+          </div>
+          <div>
+            <div class="text-3xl sm:text-4xl font-bold text-slate-100 mb-1">40ms</div>
+            <div class="text-xs sm:text-sm text-slate-500">Average API response time</div>
+          </div>
+          <div>
+            <div class="text-3xl sm:text-4xl font-bold text-slate-100 mb-1">99.99%</div>
+            <div class="text-xs sm:text-sm text-slate-500">Platform uptime SLA</div>
+          </div>
+          <div>
+            <div class="text-3xl sm:text-4xl font-bold text-slate-100 mb-1">12</div>
+            <div class="text-xs sm:text-sm text-slate-500">Countries with active deployments</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scroll indicator -->
+    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-50">
+      <span class="text-[10px] font-mono uppercase tracking-widest text-slate-500">Scroll</span>
+      <div class="w-px h-8 bg-gradient-to-b from-slate-500 to-transparent"></div>
+    </div>
+  </section>
+
+  <!-- Trusted By / Logos -->
+  <section class="py-16 border-y border-slate-800/50">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+      <p class="text-center text-xs font-mono uppercase tracking-widest text-slate-600 mb-10">Trusted by engineering teams at</p>
+      <div class="flex flex-wrap justify-center items-center gap-x-12 gap-y-8 opacity-40 grayscale hover:grayscale-0 transition-all duration-700">
+        <div class="flex items-center gap-2 text-slate-400 font-bold text-lg"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>TechFlow</div>
+        <div class="flex items-center gap-2 text-slate-400 font-bold text-lg"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5"/></svg>Quantex</div>
+        <div class="flex items-center gap-2 text-slate-400 font-bold text-lg"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>Meridian</div>
+        <div class="flex items-center gap-2 text-slate-400 font-bold text-lg"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/></svg>Apex Data</div>
+        <div class="flex items-center gap-2 text-slate-400 font-bold text-lg"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>Volt Systems</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Services Section -->
+  <section id="services" class="py-24 lg:py-32">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+      <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-16">
+        <div class="max-w-2xl">
+          <span class="text-xs font-mono uppercase tracking-widest text-cyan-400 mb-4 block">What we do</span>
+          <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-100 leading-tight">End-to-end systems engineering for complex environments</h2>
+        </div>
+        <p class="text-slate-400 max-w-md lg:text-right">
+          We don't just write code. We design, architect, and deploy resilient systems that scale under real-world pressure.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+        <!-- Web Applications -->
+        <div class="reveal glass rounded-2xl p-8 lg:p-10 card-lift group">
+          <div class="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center mb-6 group-hover:bg-cyan-500/20 transition-colors">
+            <svg class="w-6 h-6 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 7.5l3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0021 18V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v12a2.25 2.25 0 002.25 2.25z"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-slate-100 mb-3">High-Performance Web Apps</h3>
+          <p class="text-slate-400 leading-relaxed mb-6">
+            Scalable, real-time platforms built for millions of concurrent users. From fintech dashboards to SaaS control panels.
+          </p>
+          <div class="flex flex-wrap gap-2">
+            <span class="px-3 py-1 rounded-full bg-slate-800 text-xs font-mono text-slate-400 border border-slate-700/50">React / Next.js</span>
+            <span class="px-3 py-1 rounded-full bg-slate-800 text-xs font-mono text-slate-400 border border-slate-700/50">Node.js</span>
+            <span class="px-3 py-1 rounded-full bg-slate-800 text-xs font-mono text-slate-400 border border-slate-700/50">PostgreSQL</span>
+          </div>
+        </div>
+
+        <!-- AI & Automation -->
+        <div class="reveal reveal-delay-1 glass rounded-2xl p-8 lg:p-10 card-lift group">
+          <div class="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center mb-6 group-hover:bg-indigo-500/20 transition-colors">
+            <svg class="w-6 h-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-slate-100 mb-3">AI & Automation Systems</h3>
+          <p class="text-slate-400 leading-relaxed mb-6">
+            Production-grade ML pipelines, intelligent document processing, and autonomous decision engines integrated into your stack.
+          </p>
+          <div class="flex flex-wrap gap-2">
+            <span class="px-3 py-1 rounded-full bg-slate-800 text-xs font-mono text-slate-400 border border-slate-700/50">Python</span>
+            <span class="px-3 py-1 rounded-full bg-slate-800 text-xs font-mono text-slate-400 border border-slate-700/50">TensorFlow</span>
+            <span class="px-3 py-1 rounded-full bg-slate-800 text-xs font-mono text-slate-400 border border-slate-700/50">OpenAI</span>
+          </div>
+        </div>
+
+        <!-- Trading Infrastructure -->
+        <div class="reveal reveal-delay-2 glass rounded-2xl p-8 lg:p-10 card-lift group">
+          <div class="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center mb-6 group-hover:bg-emerald-500/20 transition-colors">
+            <svg class="w-6 h-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-slate-100 mb-3">Trading Infrastructure</h3>
+          <p class="text-slate-400 leading-relaxed mb-6">
+            Low-latency execution systems, market data processors, and risk management platforms for quantitative trading firms.
+          </p>
+          <div class="flex flex-wrap gap-2">
+            <span class="px-3 py-1 rounded-full bg-slate-800 text-xs font-mono text-slate-400 border border-slate-700/50">Rust</span>
+            <span class="px-3 py-1 rounded-full bg-slate-800 text-xs font-mono text-slate-400 border border-slate-700/50">C++</span>
+            <span class="px-3 py-1 rounded-full bg-slate-800 text-xs font-mono text-slate-400 border border-slate-700/50">Kafka</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Case Studies / Work -->
+  <section id="work" class="py-24 lg:py-32 bg-slate-900/30">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+      <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-16">
+        <div class="max-w-2xl">
+          <span class="text-xs font-mono uppercase tracking-widest text-cyan-400 mb-4 block">Selected work</span>
+          <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-100 leading-tight">Systems we've shipped</h2>
+        </div>
+        <a href="#" class="inline-flex items-center gap-2 text-cyan-400 font-medium hover:text-cyan-300 transition-colors group">
+          <span>View all projects</span>
+          <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+          </svg>
+        </a>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+        <!-- Project 1 -->
+        <div class="reveal group relative rounded-2xl overflow-hidden bg-slate-800/40 border border-slate-700/30 card-lift">
+          <div class="aspect-[16/10] img-zoom">
+            <img src="assets/fintech-dashboard.jpg" alt="Real-time portfolio analytics dashboard with performance charts" class="w-full h-full object-cover" loading="lazy">
+          </div>
+          <div class="p-8">
+            <div class="flex items-center gap-3 mb-4">
+              <span class="px-2.5 py-1 rounded-full bg-cyan-500/10 text-xs font-mono text-cyan-400 border border-cyan-500/20">Fintech</span>
+              <span class="px-2.5 py-1 rounded-full bg-slate-700/50 text-xs font-mono text-slate-400 border border-slate-600/30">2024</span>
+            </div>
+            <h3 class="text-xl font-bold text-slate-100 mb-2">Real-time Portfolio Analytics</h3>
+            <p class="text-slate-400 text-sm leading-relaxed mb-4">
+              Built a sub-50ms analytics platform processing 2M+ transactions daily for a $400M AUM hedge fund. Reduced reporting latency by 94%.
+            </p>
+            <div class="flex items-center gap-4 text-xs font-mono text-slate-500">
+              <span>Next.js</span>
+              <span class="w-1 h-1 rounded-full bg-slate-600"></span>
+              <span>Rust</span>
+              <span class="w-1 h-1 rounded-full bg-slate-600"></span>
+              <span>TimescaleDB</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Project 2 -->
+        <div class="reveal reveal-delay-1 group relative rounded-2xl overflow-hidden bg-slate-800/40 border border-slate-700/30 card-lift">
+          <div class="aspect-[16/10] img-zoom">
+            <img src="assets/ai-neural-network.jpg" alt="AI neural network visualization representing intelligent document processing" class="w-full h-full object-cover" loading="lazy">
+          </div>
+          <div class="p-8">
+            <div class="flex items-center gap-3 mb-4">
+              <span class="px-2.5 py-1 rounded-full bg-indigo-500/10 text-xs font-mono text-indigo-400 border border-indigo-500/20">AI / ML</span>
+              <span class="px-2.5 py-1 rounded-full bg-slate-700/50 text-xs font-mono text-slate-400 border border-slate-600/30">2024</span>
+            </div>
+            <h3 class="text-xl font-bold text-slate-100 mb-2">Intelligent Document Processing</h3>
+            <p class="text-slate-400 text-sm leading-relaxed mb-4">
+              Automated document extraction and classification system for a legal tech startup. Processing 50K+ documents/month with 99.2% accuracy.
+            </p>
+            <div class="flex items-center gap-4 text-xs font-mono text-slate-500">
+              <span>Python</span>
+              <span class="w-1 h-1 rounded-full bg-slate-600"></span>
+              <span>PyTorch</span>
+              <span class="w-1 h-1 rounded-full bg-slate-600"></span>
+              <span>AWS SageMaker</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Project 3 -->
+        <div class="reveal group relative rounded-2xl overflow-hidden bg-slate-800/40 border border-slate-700/30 card-lift">
+          <div class="aspect-[16/10] img-zoom">
+            <img src="assets/trading-platform.jpg" alt="High-frequency trading charts on laptop and mobile screens" class="w-full h-full object-cover" loading="lazy">
+          </div>
+          <div class="p-8">
+            <div class="flex items-center gap-3 mb-4">
+              <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-xs font-mono text-emerald-400 border border-emerald-500/20">Trading</span>
+              <span class="px-2.5 py-1 rounded-full bg-slate-700/50 text-xs font-mono text-slate-400 border border-slate-600/30">2023</span>
+            </div>
+            <h3 class="text-xl font-bold text-slate-100 mb-2">High-Frequency Execution Engine</h3>
+            <p class="text-slate-400 text-sm leading-relaxed mb-4">
+              Custom matching engine handling 100K+ orders/second with sub-microsecond latency. Deployed across 3 colocation centers.
+            </p>
+            <div class="flex items-center gap-4 text-xs font-mono text-slate-500">
+              <span>C++</span>
+              <span class="w-1 h-1 rounded-full bg-slate-600"></span>
+              <span>FPGA</span>
+              <span class="w-1 h-1 rounded-full bg-slate-600"></span>
+              <span>ZeroMQ</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Project 4 -->
+        <div class="reveal reveal-delay-1 group relative rounded-2xl overflow-hidden bg-slate-800/40 border border-slate-700/30 card-lift">
+          <div class="aspect-[16/10] img-zoom">
+            <img src="assets/saas-platform.jpg" alt="Engineering workstation showing enterprise SaaS platform code" class="w-full h-full object-cover" loading="lazy">
+          </div>
+          <div class="p-8">
+            <div class="flex items-center gap-3 mb-4">
+              <span class="px-2.5 py-1 rounded-full bg-cyan-500/10 text-xs font-mono text-cyan-400 border border-cyan-500/20">SaaS</span>
+              <span class="px-2.5 py-1 rounded-full bg-slate-700/50 text-xs font-mono text-slate-400 border border-slate-600/30">2023</span>
+            </div>
+            <h3 class="text-xl font-bold text-slate-100 mb-2">Enterprise Compliance Platform</h3>
+            <p class="text-slate-400 text-sm leading-relaxed mb-4">
+              Multi-tenant SaaS platform for financial compliance automation. Serving 200+ enterprise clients with SOC2 and ISO27001 certification.
+            </p>
+            <div class="flex items-center gap-4 text-xs font-mono text-slate-500">
+              <span>TypeScript</span>
+              <span class="w-1 h-1 rounded-full bg-slate-600"></span>
+              <span>Kubernetes</span>
+              <span class="w-1 h-1 rounded-full bg-slate-600"></span>
+              <span>Terraform</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Process Section -->
+  <section id="process" class="py-24 lg:py-32">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+      <div class="max-w-3xl mb-16">
+        <span class="text-xs font-mono uppercase tracking-widest text-cyan-400 mb-4 block">Our process</span>
+        <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-100 leading-tight mb-6">How we work</h2>
+        <p class="text-lg text-slate-400">A battle-tested methodology refined over 50+ enterprise engagements. No surprises, no scope creep — just predictable delivery.</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-8 lg:gap-6">
+        <!-- Step 1 -->
+        <div class="reveal relative">
+          <div class="text-6xl font-bold text-slate-800 mb-6">01</div>
+          <h3 class="text-lg font-bold text-slate-100 mb-3">Discovery & Audit</h3>
+          <p class="text-sm text-slate-400 leading-relaxed mb-4">
+            Deep-dive into your current architecture, bottlenecks, and business objectives. We map the terrain before we build.
+          </p>
+          <div class="flex flex-wrap gap-2">
+            <span class="text-xs font-mono text-slate-500">Architecture Review</span>
+            <span class="text-xs font-mono text-slate-500">Performance Audit</span>
+          </div>
+          <div class="hidden lg:block absolute top-8 right-0 w-1/2 h-px bg-gradient-to-r from-slate-700 to-transparent"></div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="reveal reveal-delay-1 relative">
+          <div class="text-6xl font-bold text-slate-800 mb-6">02</div>
+          <h3 class="text-lg font-bold text-slate-100 mb-3">Design & Prototype</h3>
+          <p class="text-sm text-slate-400 leading-relaxed mb-4">
+            System design documents, API specifications, and interactive prototypes. Validate the approach before a single line of production code.
+          </p>
+          <div class="flex flex-wrap gap-2">
+            <span class="text-xs font-mono text-slate-500">System Design</span>
+            <span class="text-xs font-mono text-slate-500">API Specs</span>
+          </div>
+          <div class="hidden lg:block absolute top-8 right-0 w-1/2 h-px bg-gradient-to-r from-slate-700 to-transparent"></div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="reveal reveal-delay-2 relative">
+          <div class="text-6xl font-bold text-slate-800 mb-6">03</div>
+          <h3 class="text-lg font-bold text-slate-100 mb-3">Build & Iterate</h3>
+          <p class="text-sm text-slate-400 leading-relaxed mb-4">
+            Two-week sprints with continuous deployment, automated testing, and weekly demos. You see progress in real-time.
+          </p>
+          <div class="flex flex-wrap gap-2">
+            <span class="text-xs font-mono text-slate-500">CI/CD</span>
+            <span class="text-xs font-mono text-slate-500">Test Automation</span>
+          </div>
+          <div class="hidden lg:block absolute top-8 right-0 w-1/2 h-px bg-gradient-to-r from-slate-700 to-transparent"></div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="reveal reveal-delay-3 relative">
+          <div class="text-6xl font-bold text-slate-800 mb-6">04</div>
+          <h3 class="text-lg font-bold text-slate-100 mb-3">Deploy & Scale</h3>
+          <p class="text-sm text-slate-400 leading-relaxed mb-4">
+            Production deployment with monitoring, observability, and runbooks. We don't hand over until it's bulletproof.
+          </p>
+          <div class="flex flex-wrap gap-2">
+            <span class="text-xs font-mono text-slate-500">Observability</span>
+            <span class="text-xs font-mono text-slate-500">Runbooks</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- About / Team Section -->
+  <section id="about" class="py-24 lg:py-32 bg-slate-900/30">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+        <div>
+          <span class="text-xs font-mono uppercase tracking-widest text-cyan-400 mb-4 block">Who we are</span>
+          <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-100 leading-tight mb-6">Engineers first, consultants second</h2>
+          <p class="text-lg text-slate-400 leading-relaxed mb-6">
+            Builddocks was founded by former engineers from top quantitative trading firms and hyperscale tech companies. We've felt the pain of systems failing under load — and we know how to prevent it.
+          </p>
+          <p class="text-slate-400 leading-relaxed mb-8">
+            Our team of 18 senior engineers has collective experience at Two Sigma, Citadel, Google, and Stripe. We specialize in the intersection of performance, reliability, and clean architecture.
+          </p>
+
+          <div class="grid grid-cols-2 gap-6">
+            <div>
+              <div class="text-3xl font-bold text-slate-100 mb-1">18</div>
+              <div class="text-sm text-slate-500">Senior engineers</div>
+            </div>
+            <div>
+              <div class="text-3xl font-bold text-slate-100 mb-1">6</div>
+              <div class="text-sm text-slate-500">Years in operation</div>
+            </div>
+            <div>
+              <div class="text-3xl font-bold text-slate-100 mb-1">50+</div>
+              <div class="text-sm text-slate-500">Projects delivered</div>
+            </div>
+            <div>
+              <div class="text-3xl font-bold text-slate-100 mb-1">0</div>
+              <div class="text-sm text-slate-500">Offshore contractors</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="relative">
+          <div class="aspect-square rounded-2xl overflow-hidden img-zoom">
+            <img src="assets/team-collaboration.jpg" alt="Builddocks engineering team collaborating on a system design" class="w-full h-full object-cover" loading="lazy">
+          </div>
+          <!-- Decorative elements -->
+          <div class="absolute -top-4 -right-4 w-24 h-24 border border-cyan-500/20 rounded-2xl"></div>
+          <div class="absolute -bottom-4 -left-4 w-32 h-32 border border-indigo-500/20 rounded-full"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  <section class="py-24 lg:py-32">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+      <div class="text-center max-w-3xl mx-auto mb-16">
+        <span class="text-xs font-mono uppercase tracking-widest text-cyan-400 mb-4 block">Testimonials</span>
+        <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-100 leading-tight">What our clients say</h2>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+        <!-- Testimonial 1 -->
+        <div class="reveal glass rounded-2xl p-8">
+          <div class="flex gap-1 mb-6">
+            <svg class="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+          </div>
+          <p class="text-slate-300 leading-relaxed mb-6">
+            "Builddocks reduced our trade execution latency from 400ms to under 15ms. That's not an incremental improvement — it's a completely different business."
+          </p>
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-indigo-500 flex items-center justify-center text-white font-bold text-sm">MR</div>
+            <div>
+              <div class="text-sm font-semibold text-slate-100">Marcus Reid</div>
+              <div class="text-xs text-slate-500">CTO, Quantex Capital</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Testimonial 2 -->
+        <div class="reveal reveal-delay-1 glass rounded-2xl p-8">
+          <div class="flex gap-1 mb-6">
+            <svg class="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+          </div>
+          <p class="text-slate-300 leading-relaxed mb-6">
+            "The AI document processing system they built saved our legal team 200+ hours per month. ROI was visible within the first quarter."
+          </p>
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm">SL</div>
+            <div>
+              <div class="text-sm font-semibold text-slate-100">Sarah Lin</div>
+              <div class="text-xs text-slate-500">VP of Operations, Meridian Legal</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Testimonial 3 -->
+        <div class="reveal reveal-delay-2 glass rounded-2xl p-8">
+          <div class="flex gap-1 mb-6">
+            <svg class="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+          </div>
+          <p class="text-slate-300 leading-relaxed mb-6">
+            "Finally, a team that understands both the business context and the technical complexity. They delivered our compliance platform 3 weeks ahead of schedule."
+          </p>
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold text-sm">DK</div>
+            <div>
+              <div class="text-sm font-semibold text-slate-100">David Kim</div>
+              <div class="text-xs text-slate-500">CEO, Apex Data Solutions</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact CTA Section -->
+  <section id="contact" class="py-24 lg:py-32 relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-b from-slate-900/50 to-slate-950"></div>
+    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-cyan-500/5 rounded-full blur-[120px]"></div>
+
+    <div class="relative z-10 max-w-4xl mx-auto px-6 lg:px-8 text-center">
+      <span class="text-xs font-mono uppercase tracking-widest text-cyan-400 mb-4 block">Start a conversation</span>
+      <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-100 leading-tight mb-6">Ready to ship something that actually works?</h2>
+      <p class="text-lg text-slate-400 mb-10 max-w-2xl mx-auto">
+        Tell us what you're building. We'll respond within 24 hours with an honest assessment of how we can help — or point you in the right direction if we're not the right fit.
+      </p>
+
+      <div class="flex flex-col sm:flex-row justify-center gap-4 mb-12">
+        <a href="mailto:team@builddocks.in" class="btn-shine inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-gradient-to-r from-cyan-500 to-cyan-600 text-slate-950 font-semibold hover:from-cyan-400 hover:to-cyan-500 transition-all active:scale-95 shadow-lg shadow-cyan-500/20">
+          <span>hello@builddocks.io</span>
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+          </svg>
+        </a>
+        <a href="#" class="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full border border-slate-700 text-slate-300 font-semibold hover:bg-slate-800/50 hover:border-slate-600 transition-all active:scale-95">
+          <span>Book a 30-min call</span>
+        </a>
+      </div>
+
+      <div class="flex flex-wrap justify-center gap-8 text-sm text-slate-500">
+        <div class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+          <span>Response within 24h</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+          <span>No sales pressure</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+          <span>NDA available on request</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800/60 py-16">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+        <!-- Brand -->
+        <div class="md:col-span-2">
+          <a href="#" class="mb-4 inline-block">
+            <img alt="Builddocks" class="h-12 w-auto object-contain" src="assets/logo.png"/>
+          </a>
+          <p class="text-sm text-slate-500 max-w-sm leading-relaxed">
+            Engineering high-performance digital systems for enterprises that demand reliability, speed, and scale.
+          </p>
+        </div>
+
+        <!-- Services -->
+        <div>
+          <h4 class="text-sm font-semibold text-slate-200 mb-4">Services</h4>
+          <ul class="space-y-3">
+            <li><a href="#" class="text-sm text-slate-500 hover:text-cyan-400 transition-colors">Web Applications</a></li>
+            <li><a href="#" class="text-sm text-slate-500 hover:text-cyan-400 transition-colors">AI & Automation</a></li>
+            <li><a href="#" class="text-sm text-slate-500 hover:text-cyan-400 transition-colors">Trading Infrastructure</a></li>
+            <li><a href="#" class="text-sm text-slate-500 hover:text-cyan-400 transition-colors">System Architecture</a></li>
+          </ul>
+        </div>
+
+        <!-- Company -->
+        <div>
+          <h4 class="text-sm font-semibold text-slate-200 mb-4">Company</h4>
+          <ul class="space-y-3">
+            <li><a href="#" class="text-sm text-slate-500 hover:text-cyan-400 transition-colors">About</a></li>
+            <li><a href="#" class="text-sm text-slate-500 hover:text-cyan-400 transition-colors">Careers</a></li>
+            <li><a href="#" class="text-sm text-slate-500 hover:text-cyan-400 transition-colors">Blog</a></li>
+            <li><a href="#" class="text-sm text-slate-500 hover:text-cyan-400 transition-colors">Contact</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="pt-8 border-t border-slate-800/60 flex flex-col md:flex-row justify-between items-center gap-4">
+        <p class="text-xs text-slate-600">© 2025 Builddocks. All rights reserved.</p>
+        <div class="flex items-center gap-6">
+          <a href="#" class="text-xs text-slate-600 hover:text-slate-400 transition-colors">Privacy Policy</a>
+          <a href="#" class="text-xs text-slate-600 hover:text-slate-400 transition-colors">Terms of Service</a>
+          <a href="#" class="text-xs text-slate-600 hover:text-slate-400 transition-colors">Security</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- JavaScript for interactions -->
+  <script>
+    // Navbar scroll effect
+    const navbar = document.getElementById('navbar');
+    let lastScroll = 0;
+
+    window.addEventListener('scroll', () => {
+      const currentScroll = window.pageYOffset;
+      
+      if (currentScroll > 50) {
+        navbar.classList.add('glass-strong', 'shadow-lg', 'shadow-black/20');
+      } else {
+        navbar.classList.remove('glass-strong', 'shadow-lg', 'shadow-black/20');
+      }
+      
+      lastScroll = currentScroll;
+    });
+
+    // Mobile menu
+    const menuBtn = document.getElementById('menuBtn');
+    const closeMenuBtn = document.getElementById('closeMenuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+    const mobileLinks = document.querySelectorAll('.mobile-link');
+
+    menuBtn.addEventListener('click', () => mobileMenu.classList.add('open'));
+    closeMenuBtn.addEventListener('click', () => mobileMenu.classList.remove('open'));
+    mobileLinks.forEach(link => {
+      link.addEventListener('click', () => mobileMenu.classList.remove('open'));
+    });
+
+    // Scroll reveal animation
+    const revealElements = document.querySelectorAll('.reveal');
+    
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('active');
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    });
+
+    revealElements.forEach(el => revealObserver.observe(el));
+
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      });
+    });
+  </script>
+</body>
+</html>
